@@ -54,17 +54,44 @@ userRouter.post ('/', async(req,res) => {
 //SHOW TODO
 userRouter.get ('/:ID64', async (req,res) =>{
     const userID = req.params.ID64
-    request(
+    // const responseGames = {}
+    // const responseProfile = {}
+    // `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${API_KEY}&steamids=${userID}`
+
+    const responseGames = new Promise ((resolve, reject) =>(request(
         `https://api.steampowered.com/IPlayerService/GetOwnedGames/v0001/?key=${API_KEY}&steamid=${userID}&include_appinfo=true&format=json`,
         (error, response, body) => {
             if(error){
                 res.send ('Something went wrong connecting')
             }
             else{
-                res.status(201).json(body)
+                resolve( JSON.parse(body).response)
             }
         }
-        )
+        )))
+
+        const responseProfile = new Promise ((resolve, reject) =>(request(
+            `http://api.steampowered.com/ISteamUser/GetPlayerSummaries/v0002/?key=${API_KEY}&steamids=${userID}`,
+            (error, response, body) => {
+                if(error){
+                    res.send ('Something went wrong connecting')
+                }
+                else{
+                  
+                    resolve(JSON.parse(body).response)
+                }
+            }
+            )))
+
+        Promise.all([responseGames,responseProfile]).then((results) => {
+          
+            const concatResponse = Object.assign(...results)
+            
+            res.status(201).json(concatResponse)
+
+        })
+
+            
 })
 
 module.exports = userRouter
